@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<launch>
+	<node pkg="NMPC_PC_mFxFylearning" type="nmpc_pc_mFxFylearning" name="nmpc_pc_mFxFylearning" output="screen" >
+
+		<param name="W_x" 		value="30.0"/>
+		<param name="W_y" 		value="32.0"/>
+		<param name="W_z" 		value="32.0"/>
+		<param name="W_u" 		value="1.3"/>
+		<param name="W_v" 		value="1.3"/>
+		<param name="W_w" 		value="1.3"/>
+		<param name="W_phi" 		value="22.0"/>
+		<param name="W_theta" 		value="22.0"/>
+		<param name="W_psi" 		value="80.0"/>
+		<param name="W_Fz" 		value="0.018"/>
+
+		<param name="WN_x" 		value="50.0"/>
+		<param name="WN_y" 		value="50.0"/>
+		<param name="WN_z" 		value="50.0"/>
+		<param name="WN_u" 		value="1.0"/>
+		<param name="WN_v" 		value="1.0"/>
+		<param name="WN_w" 		value="1.0"/>
+	</node>
+</launch>
