@@ -20,7 +20,7 @@ endif()
 find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs roslib nav_msgs mavros_msgs tf dynamic_reconfigure
 )
 
-generate_dynamic_reconfigure_options(cfg/set_trajectory.cfg cfg/set_trajectory_posControl.cfg cfg/set_trajectory_withDrop.cfg cfg/set_trajectory_withDropReg.cfg)
+generate_dynamic_reconfigure_options(cfg/set_trajectory.cfg cfg/set_trajectory_withDrop.cfg cfg/set_trajectory_withDropReg.cfg)
 
 find_package(Eigen3 3.0.1 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIRS})
