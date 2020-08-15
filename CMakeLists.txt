@@ -20,9 +20,9 @@ endif()
 find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs roslib nav_msgs mavros_msgs tf dynamic_reconfigure
 )
 
-generate_dynamic_reconfigure_options(cfg/set_trajectory.cfg)
+generate_dynamic_reconfigure_options(cfg/set_trajectory.cfg cfg/set_trajectory_posControl.cfg cfg/set_trajectory_withDrop.cfg cfg/set_trajectory_withDropReg.cfg)
 
-find_package(Eigen3 REQUIRED)
+find_package(Eigen3 3.0.1 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIRS})
 
 ## System dependencies are found with CMake's conventions
@@ -54,5 +54,13 @@ include_directories(
 add_executable(trajectory src/trajectory.cpp)
 target_link_libraries(trajectory ${catkin_LIBRARIES})
 add_dependencies(trajectory ${PROJECT_NAME}_gencfg)
+
+add_executable(trajectory_withDrop src/trajectory_withDrop.cpp)
+target_link_libraries(trajectory_withDrop ${catkin_LIBRARIES})
+add_dependencies(trajectory_withDrop ${PROJECT_NAME}_gencfg)
+
+add_executable(trajectory_withDropReg src/trajectory_withDropReg.cpp)
+target_link_libraries(trajectory_withDropReg ${catkin_LIBRARIES})
+add_dependencies(trajectory_withDropReg ${PROJECT_NAME}_gencfg)
 
 endif()
