@@ -1,5 +1,5 @@
 # trajectories
-ROS package to command various trajectories over ROS topic. Different trajectories can be selected via "rqt_reconfigure"
+ROS package to command various trajectories (setpoint, circle, 8-shaped, square) over ROS topic. Different trajectories can be selected via "rqt_reconfigure"
 
 Please don't forget to consider citing the following refences if you use these codes in your work.\
 **Plain Text:**
