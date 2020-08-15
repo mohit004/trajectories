@@ -1,7 +1,29 @@
 # trajectories
 ROS package to command various trajectories (setpoint, circle, 8-shaped, square) over ROS topic. Different trajectories can be selected via "rqt_reconfigure"
 
+**Usage:**
+Launch "trajectory.launch" for general trajectory.\
+Launch "trajectory_withDrop.launch" for trajectory along with drop capability.\
+Launch "trajectory_withDropReg.launch" for trajectory along with drop and regression capabilities.
+
 Please don't forget to consider citing the following refences if you use these codes in your work.\
+**Plain text:**
+```
+M. Mehndiratta and E. Kayacan, "Gaussian Process-based Learning Control of Aerial Robots for Precise Visualization of Geological Outcrops," 2020 European Control Conference (ECC), Saint Petersburg, Russia, 2020, pp. 10-16.
+```
+**Bibtex:**
+```
+@INPROCEEDINGS{9143655,
+  author={M. {Mehndiratta} and E. {Kayacan}},
+  booktitle={2020 European Control Conference (ECC)}, 
+  title={Gaussian Process-based Learning Control of Aerial Robots for Precise Visualization of Geological Outcrops}, 
+  year={2020},
+  volume={},
+  number={},
+  pages={10-16}
+}
+```
+
 **Plain Text:**
 ```
 Mehndiratta M., Kayacan E., Patel S., Kayacan E., Chowdhary G. (2019) Learning-Based Fast Nonlinear Model Predictive Control for Custom-Made 3D Printed Ground and Aerial Robots. In: Raković S., Levine W. (eds) Handbook of Model Predictive Control. Control Engineering. Birkhäuser, Cham. https://doi.org/10.1007/978-3-319-77489-3_24
