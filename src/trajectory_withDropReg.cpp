@@ -1,5 +1,5 @@
 /**
- * @file   trajectory.cpp
+ * @file   trajectory_withDropReg.cpp
  * @author Mohit Mehndiratta
  * @date   April 2019
  *
@@ -8,20 +8,24 @@
  */
 
 #include <trajectory.h>
-#include <trajectories/set_trajectoryConfig.h>
+#include <trajectories/set_trajectory_withDropRegConfig.h>
 
 double sampleTime = 0.01;
 
-void dynamicReconfigureCallback(trajectories::set_trajectoryConfig &config, uint32_t level)
+void dynamicReconfigureCallback(trajectories::set_trajectory_withDropRegConfig &config, uint32_t level)
 {
     traj_start = config.traj_start;
     max_z_start = config.max_z_start;
+    reg_on = config.reg_on;
+    drop_flag = config.drop;
     climb_flag = config.climb;
     land_flag = config.land;
     change_z = config.change_z;
     pub_setpoint_pos = config.pub_on_setpoint_position;
 
     traj_type = config.traj_type;
+    drop_type = config.drop_type;
+    num_drops = config.num_simultaneousDrops_firstLap;
     pos_pub_delay = config.pos_pub_delay;
     max_z = config.max_z;
     x_des = config.x_des;
@@ -44,16 +48,19 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "trajectory");
     ros::NodeHandle nh;
 
-    dynamic_reconfigure::Server<trajectories::set_trajectoryConfig> server;
-    dynamic_reconfigure::Server<trajectories::set_trajectoryConfig>::CallbackType f;
+    dynamic_reconfigure::Server<trajectories::set_trajectory_withDropRegConfig> server;
+    dynamic_reconfigure::Server<trajectories::set_trajectory_withDropRegConfig>::CallbackType f;
     f = boost::bind(&dynamicReconfigureCallback, _1, _2);
     server.setCallback(f);
 
     ref_pos_pub = nh.advertise<geometry_msgs::Vector3>("ref_trajectory/pose", 1);
     ref_pos_delay_pub = nh.advertise<geometry_msgs::Vector3>("ref_trajectory/pose_delayed", 1);
     ref_vel_pub = nh.advertise<geometry_msgs::Vector3>("ref_trajectory/velocity", 1);
+    ref_yaw_pub = nh.advertise<std_msgs::Float64>("ref_trajectory/yaw", 1);
     setpoint_pos_pub = nh.advertise<geometry_msgs::PoseStamped>("mavros/setpoint_position/local", 1);
+    servo_pub = nh.advertise<std_msgs::Float64>("servo_pos", 1);
     traj_on_pub = nh.advertise<std_msgs::Bool>("trajectory_on", 1);
+    reg_on_pub = nh.advertise<std_msgs::Bool>("regression_on", 1);
 
     ros::Rate rate(1/sampleTime);
 
@@ -65,6 +72,8 @@ int main(int argc, char **argv)
         pos_ref_start_msg.pose.position.z = 0;
 
 //    int delay = 3+5;
+
+    servo_pos_msg.data = 0.0;
 
     double x,y,z;
     double x_last = 0, y_last = 0, z_last = 0;
@@ -80,6 +89,7 @@ int main(int argc, char **argv)
     while(ros::ok())
     {
         traj_start_msg.data = traj_start;
+        reg_on_msg.data = reg_on;
 
         if (max_z_start &&  pos_ref_start_msg.pose.position.z != max_z
                         && !landed_flag && traj_start != 1)
@@ -200,7 +210,9 @@ int main(int argc, char **argv)
                     y_last = y;
                     z_last = z;
 
+                    servo_pub.publish(servo_pos_msg);
                     traj_on_pub.publish(traj_start_msg);
+                    reg_on_pub.publish(reg_on_msg);
                     ros::spinOnce();
                     rate.sleep();
                 }
@@ -220,6 +232,14 @@ int main(int argc, char **argv)
 
             if(traj_type == 0) // hover at origin
             {
+                if (!drop_started_flag && drop_flag)
+                {
+                    drop_start = drop_flag;
+                    ROS_INFO("drop_start --> 1");
+                    drop_started_flag = true;
+                    if(drop_type == 2)
+                        count_ = count_ - 1;
+                }
                 if (print_flag_hover_origin == 1)
                 {
                     ROS_INFO("--------Hover at origin selected!--------");
@@ -242,6 +262,14 @@ int main(int argc, char **argv)
 
             if(traj_type == 1) // hover
             {
+                if (!drop_started_flag && drop_flag)
+                {
+                    drop_start = drop_flag;
+                    ROS_INFO("drop_start --> 1");
+                    drop_started_flag = true;
+                    if(drop_type == 2)
+                        count_ = count_ - 1;
+                }
                 if (print_flag_hover == 1)
                 {
                     t_last = ros::Time::now().toSec();
@@ -328,6 +356,14 @@ int main(int argc, char **argv)
                 else
                 {
                     traj_time_z = t - t_last_z;
+                    if (!drop_started_flag && traj_time_z > 0.25*time_period && drop_flag)
+                    {
+                        drop_start = drop_flag;
+                        ROS_INFO("drop_start --> 1");
+                        drop_started_flag = true;
+                        if(drop_type == 2)
+                            count_ = count_ - 1;
+                    }
                     y = y_atTrajStart + radius*cos(rotvel*traj_time);
                     z = z_atTrajStart - del_z*((sin(rotvel*traj_time_z))) * const_z;
 
@@ -380,6 +416,14 @@ int main(int argc, char **argv)
                     x_delay_start = x;
                     y_delay_start = y;
                     z_delay_start = z;
+                }
+                if (!drop_started_flag && traj_time > 0.25*time_period && drop_flag)
+                {
+                    drop_start = drop_flag;
+                    ROS_INFO("drop_start --> 1");
+                    drop_started_flag = true;
+                    if(drop_type == 2)
+                        count_ = count_ - 1;
                 }
                 x = x_atTrajStart - radius*cos(rotvel*traj_time + M_PI/2);
                 if (!x_delay_started)
@@ -471,6 +515,12 @@ int main(int argc, char **argv)
                 else
                 {
                     traj_time_z = t - t_last_z;
+                    if (!drop_started_flag && traj_time_z > 0.25*time_period  && drop_flag)
+                    {
+                        drop_start = drop_flag;
+                        ROS_INFO("drop_start --> 1");
+                        drop_started_flag = true;
+                    }
                     y = y_atTrajStart + radius*cos(rotvel*traj_time);
                     if (!y_delay_started)
                         if (std::abs(y - y_delay_start) < radius*(sin(rotvel*(pos_pub_delay*sampleTime))))
@@ -527,6 +577,14 @@ int main(int argc, char **argv)
                     x_delay_start = x;
                     y_delay_start = y;
                     z_delay_start = z;
+                }
+                if (!drop_started_flag && traj_time > 0.25*time_period && drop_flag)
+                {
+                    drop_start = drop_flag;
+                    ROS_INFO("drop_start --> 1");
+                    drop_started_flag = true;
+                    if(drop_type == 2)
+                        count_ = count_ - 1;
                 }
                 if (std::abs(sin(rotvel*traj_time)-1) < 0.001 || std::abs(sin(rotvel*traj_time)+1) < 0.001)
                     x = x_atTrajStart + radius*(sin(rotvel*traj_time)<0 ? std::floor(sin(rotvel*traj_time)) : std::ceil(sin(rotvel*traj_time)));
@@ -615,6 +673,13 @@ int main(int argc, char **argv)
 
             climbed_flag = false;
             landed_flag = false;
+
+            if (drop_started_flag)
+            {
+                drop_start = 0;
+                ROS_INFO("drop_start --> 0");
+                drop_started_flag = false;
+            }
         }
 
         if(land_flag)
@@ -693,7 +758,9 @@ int main(int argc, char **argv)
                 y_last = y;
                 z_last = z;
 
+                servo_pub.publish(servo_pos_msg);
                 traj_on_pub.publish(traj_start_msg);
+                reg_on_pub.publish(reg_on_msg);
                 ros::spinOnce();
                 rate.sleep();
             }
@@ -742,7 +809,45 @@ int main(int argc, char **argv)
             setpoint_pos_pub.publish(setpoint_pos_msg);
         }
 
+        if(drop_start == 1 && traj_start)
+        {
+            time_drop = time_drop + 0.01;
+//            float delay_drop = (3.15*7/3) * (2/drop_type);
+            float delay_drop = (0.5*time_period) * (2/drop_type);
+
+            if(time_drop > delay_drop && count_ < 4)
+            {
+                if (count_ == count_start)
+                    count_ = count_ + num_drops;
+                else
+                    count_ = count_ + 1;
+                if (count_ >= 0)
+                {
+                    servo_pos_msg.data = count_/4.0;
+                    ROS_INFO("servo_pos_msg %f",servo_pos_msg.data);
+                }
+                time_drop = 0.0;
+            }
+            else
+            {
+                servo_pos_msg.data = servo_pos_msg.data;
+//                ROS_INFO("servo_pos_msg %f",servo_pos_msg.data);
+            }
+        }
+        else
+        {
+            servo_pos_msg.data = servo_pos_msg.data;
+            time_drop = 0.0;
+            if (count_ != count_start)
+            {
+                count_ = count_start;
+                servo_pos_msg.data = 0.0;
+            }
+        }
+
+        servo_pub.publish(servo_pos_msg);
         traj_on_pub.publish(traj_start_msg);
+        reg_on_pub.publish(reg_on_msg);
 
         ros::spinOnce();
         rate.sleep();
