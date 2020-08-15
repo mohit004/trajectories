@@ -1,0 +1,4 @@
+<launch>
+    <node name="trajectory_withDropReg" pkg="trajectories" type="trajectory_withDropReg" output="screen" />
+    <node name="rqt_reconfigure" pkg="rqt_reconfigure" type="rqt_reconfigure" />
+</launch>
