@@ -1,7 +1,7 @@
 # trajectories
 ROS package to command various trajectories (setpoint, circle, 8-shaped, square) over ROS topic. Different trajectories can be selected via "rqt_reconfigure"
 
-**Usage:**
+**Usage:**\
 Launch "trajectory.launch" for general trajectory.\
 Launch "trajectory_withDrop.launch" for trajectory along with drop capability.\
 Launch "trajectory_withDropReg.launch" for trajectory along with drop and regression capabilities.
